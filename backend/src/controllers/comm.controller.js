@@ -299,6 +299,7 @@ exports.retryLog = async (req, res) => {
       } catch (e2) {
         log.status = 'failed';
         log.error  = e2.message;
+        if (e2.meta) log.metadata = { ...log.metadata, metaError: e2.meta };
       }
     }
 

@@ -62,7 +62,8 @@ const loggedSendWhatsApp = async ({ to, templateName, languageCode = 'en', compo
     // Meta API error — e.g. template not found, invalid phone, expired token
     log.status = 'failed';
     log.error  = err.message;
-    console.error('[WhatsApp] send failed:', err.message);
+    if (err.meta) log.metadata = { ...log.metadata, metaError: err.meta };
+    console.error('[WhatsApp] send failed:', err.message, err.meta || '');
   }
 
   await log.save();
