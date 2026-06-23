@@ -63,7 +63,7 @@ function buildActiveSteps(isUrgent, withKit, hasKits) {
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-function CalendarPicker({ value, onChange }) {
+function CalendarPicker({ value, onChange, minDaysFromNow = 0, maxDaysFromNow = null }) {
   const today = new Date(); today.setHours(0,0,0,0);
   const [vy, setVY] = useState(today.getFullYear());
   const [vm, setVM] = useState(today.getMonth());
@@ -76,7 +76,9 @@ function CalendarPicker({ value, onChange }) {
   const daysInMon = new Date(vy, vm+1, 0).getDate();
   const cells = Array.from({ length: firstDay + daysInMon }, (_, i) => i < firstDay ? null : i - firstDay + 1);
 
-  const isDisabled = (d) => new Date(vy, vm, d) < today;
+  const minDate = new Date(today); minDate.setDate(minDate.getDate() + minDaysFromNow);
+  const maxDate = maxDaysFromNow !== null ? new Date(today.getFullYear(), today.getMonth(), today.getDate() + maxDaysFromNow) : null;
+  const isDisabled = (d) => { const date = new Date(vy, vm, d); return date < minDate || (maxDate !== null && date > maxDate); };
   const isSelected = (d) => sel && sel.getFullYear()===vy && sel.getMonth()===vm && sel.getDate()===d;
   const isToday = (d) => today.getFullYear()===vy && today.getMonth()===vm && today.getDate()===d;
 
@@ -363,7 +365,15 @@ export default function BookingFlow() {
   // ── Urgent toggle — reset kit choices ────────────────────────
   const handleSetUrgent = (urgent) => {
     setIsUrgent(urgent);
-    if (urgent) { setWithKit(false); setKitId(''); }
+    if (urgent) {
+      setWithKit(false);
+      setKitId('');
+    } else if (scheduledDate) {
+      // If switching back to Normal, clear date if it falls within the 3-day block
+      const t = new Date(); t.setHours(0,0,0,0);
+      const minDate = new Date(t); minDate.setDate(minDate.getDate() + 3);
+      if (new Date(scheduledDate + 'T00:00:00') < minDate) setScheduledDate('');
+    }
   };
 
   // ── Pay now ──────────────────────────────────────────────────
@@ -751,7 +761,27 @@ export default function BookingFlow() {
         {stepId === STEP_IDS.DATE && (
           <div className="bg-white rounded-3xl shadow-lg p-6">
             <StepHeader icon="📅" title="Select Ceremony Date" desc="Choose your preferred date" />
-            <CalendarPicker value={scheduledDate} onChange={d => { setScheduledDate(d); setErrors(e => ({...e, scheduledDate:''})); }} />
+            {isUrgent ? (
+              <div className="mb-4 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-red-50 border border-red-200">
+                <Zap size={14} className="text-red-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-red-700 leading-relaxed">
+                  Urgent bookings are available for <span className="font-semibold">today, tomorrow, or day after tomorrow</span> only.
+                </p>
+              </div>
+            ) : (
+              <div className="mb-4 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-200">
+                <Info size={14} className="text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-700 leading-relaxed">
+                  Normal bookings require <span className="font-semibold">at least 3 days</span> advance notice so we can arrange the pandit and samagri kit.
+                </p>
+              </div>
+            )}
+            <CalendarPicker
+              value={scheduledDate}
+              onChange={d => { setScheduledDate(d); setErrors(e => ({...e, scheduledDate:''})); }}
+              minDaysFromNow={isUrgent ? 0 : 3}
+              maxDaysFromNow={isUrgent ? 2 : null}
+            />
             {errors.scheduledDate && <p className="text-red-500 text-xs mt-2">{errors.scheduledDate}</p>}
             <NavButtons onBack={goBack} onNext={handleNext} />
           </div>
