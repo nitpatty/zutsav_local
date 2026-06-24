@@ -11,8 +11,10 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import API from '../api/axios';
 
+// ✅ Helper to redirect users based on notification type
 function getNotificationUrl(notification) {
   const type = notification?.type || '';
+
   if (
     type === 'booking_created' ||
     type === 'pandit_assigned' ||
@@ -47,6 +49,7 @@ export function NotificationProvider({ children, user }) {
   const socketRef = useRef(null);
   const navigate = useNavigate();
 
+  // ✅ Fetch unread count
   const fetchUnreadCount = useCallback(async () => {
     if (!user) return;
     try {
@@ -55,6 +58,7 @@ export function NotificationProvider({ children, user }) {
     } catch {}
   }, [user]);
 
+  // ✅ Fetch notifications
   const fetchNotifications = useCallback(async (page = 1) => {
     if (!user) return;
     setLoading(true);
@@ -75,16 +79,20 @@ export function NotificationProvider({ children, user }) {
     }
   }, [user]);
 
+  // ✅ Mark single notification read
   const markRead = useCallback(async (id) => {
     try {
       await API.patch(`/notifications/${id}/read`);
       setNotifications(prev =>
-        prev.map(n => n._id === id ? { ...n, isRead: true } : n)
+        prev.map(n =>
+          n._id === id ? { ...n, isRead: true } : n
+        )
       );
       setUnreadCount(c => Math.max(0, c - 1));
     } catch {}
   }, []);
 
+  // ✅ Mark all read
   const markAllRead = useCallback(async () => {
     try {
       await API.patch('/notifications/read-all');
@@ -93,15 +101,20 @@ export function NotificationProvider({ children, user }) {
     } catch {}
   }, []);
 
+  // ✅ Delete single notification
   const deleteNotification = useCallback(async (id) => {
     const n = notifications.find(x => x._id === id);
     try {
       await API.delete(`/notifications/${id}`);
       setNotifications(prev => prev.filter(x => x._id !== id));
-      if (n && !n.isRead) setUnreadCount(c => Math.max(0, c - 1));
+
+      if (n && !n.isRead) {
+        setUnreadCount(c => Math.max(0, c - 1));
+      }
     } catch {}
   }, [notifications]);
 
+  // ✅ Clear all notifications
   const clearAll = useCallback(async () => {
     try {
       await API.delete('/notifications/clear-all');
@@ -110,7 +123,7 @@ export function NotificationProvider({ children, user }) {
     } catch {}
   }, []);
 
-  // ✅ ✅ SOCKET CONNECTION FIXED HERE
+  // ✅ ✅ ✅ SOCKET CONNECTION FIX
   useEffect(() => {
     if (!user) {
       if (socketRef.current) {
@@ -125,22 +138,26 @@ export function NotificationProvider({ children, user }) {
     const token = localStorage.getItem('zutsav_token');
     if (!token) return;
 
-    // ✅ FIXED: Proper production URL (no localhost fallback)
+    // ✅ PRODUCTION SAFE URL (NO localhost fallback)
     const serverUrl =
       process.env.REACT_APP_API_URL
         ? process.env.REACT_APP_API_URL.replace('/api', '')
-        : "https://backend.zutsav.com";
+        : 'https://backend.zutsav.com';
 
+    // ✅ FIXED SOCKET CONFIG
     const socket = io(serverUrl, {
       auth: { token },
-      transports: ["websocket"], // ✅ force websocket
+
+      // ✅ IMPORTANT: allow fallback for CapRover/nginx
+      transports: ['websocket', 'polling'],
+
       withCredentials: true,
       reconnection: true,
-      reconnectionDelay: 1000
+      reconnectionDelay: 1000,
     });
 
     socket.on('connect', () => {
-      console.log('[Socket.IO] Connected to', serverUrl);
+      console.log('[Socket.IO] ✅ Connected:', serverUrl);
       fetchUnreadCount();
     });
 
@@ -150,48 +167,46 @@ export function NotificationProvider({ children, user }) {
 
       const targetUrl = getNotificationUrl(notification);
 
-      toast.custom(
-        (t) => (
-          <div
-            onClick={() => {
-              toast.dismiss(t.id);
-              navigate(targetUrl);
-            }}
-            style={{
-              display: 'flex',
-              gap: '12px',
-              background: '#fff',
-              borderRadius: '16px',
-              padding: '14px',
-              maxWidth: '380px',
-              cursor: 'pointer'
-            }}
-          >
-            <span>🔔</span>
-            <div>
-              <p style={{ margin: 0, fontWeight: 700 }}>
-                {notification.title}
-              </p>
-              <p style={{ margin: 0, fontSize: '12px' }}>
-                {notification.message}
-              </p>
-            </div>
+      toast.custom((t) => (
+        <div
+          onClick={() => {
+            toast.dismiss(t.id);
+            navigate(targetUrl);
+          }}
+          style={{
+            display: 'flex',
+            gap: '12px',
+            background: '#fff',
+            borderRadius: '16px',
+            padding: '14px',
+            maxWidth: '380px',
+            cursor: 'pointer'
+          }}
+        >
+          <span>🔔</span>
+          <div>
+            <p style={{ margin: 0, fontWeight: 700 }}>
+              {notification.title}
+            </p>
+            <p style={{ margin: 0, fontSize: '12px' }}>
+              {notification.message}
+            </p>
           </div>
-        ),
-        { duration: 5000, id: notification._id }
-      );
+        </div>
+      ));
     });
 
     socket.on('disconnect', () => {
-      console.log('[Socket.IO] Disconnected');
+      console.log('[Socket.IO] ❌ Disconnected');
     });
 
     socket.on('connect_error', (err) => {
-      console.warn('[Socket.IO] Error:', err.message);
+      console.warn('[Socket.IO] ❌ Error:', err.message);
     });
 
     socketRef.current = socket;
 
+    // ✅ initial data load
     fetchNotifications(1);
 
     return () => {
@@ -199,7 +214,7 @@ export function NotificationProvider({ children, user }) {
       socketRef.current = null;
     };
 
-  }, [user]);
+  }, [user, fetchNotifications, fetchUnreadCount, navigate]);
 
   return (
     <NotificationContext.Provider value={{
@@ -211,7 +226,7 @@ export function NotificationProvider({ children, user }) {
       markRead,
       markAllRead,
       deleteNotification,
-      clearAll,
+      clearAll
     }}>
       {children}
     </NotificationContext.Provider>
