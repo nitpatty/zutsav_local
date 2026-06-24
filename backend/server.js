@@ -8,7 +8,7 @@ const seedAdmin  = require('./src/utils/seedAdmin');
 const { setIO }  = require('./src/utils/notificationService');
 const { startDeletionCleanupJob, startBookingReminderJobs } = require('./src/utils/cleanupJobs');
 
-const PORT = process.env.PORT || 5000;
+const PORT = 3000;
 
 connectDB().then(async () => {
   await seedAdmin();
