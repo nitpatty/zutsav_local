@@ -14,7 +14,7 @@ const {
 
 const PORT = 3000;
 
-// ✅ Allowed frontend domains
+// ✅ Allowed frontend origins
 const allowedOrigins = [
   "http://localhost:3000",
   "http://app.zutsav.com",
@@ -27,25 +27,18 @@ connectDB().then(async () => {
 
   const server = http.createServer(app);
 
-  // ✅ ✅ Socket.IO (FINAL FIX)
+  // ✅ ✅ Fixed Socket.IO config
   const io = new Server(server, {
     cors: {
-      origin: (origin, callback) => {
-        if (!origin) return callback(null, true); // allow non-browser
-
-        if (allowedOrigins.includes(origin)) {
-          return callback(null, true);
-        } else {
-          return callback(new Error("Not allowed by CORS (Socket.IO)"));
-        }
-      },
+      origin: allowedOrigins,
       credentials: true,
-      methods: ["GET", "POST"]
+      methods: ["GET", "POST", "PATCH"]
     },
-    transports: ["websocket", "polling"] // ✅ ensure compatibility
+    transports: ["websocket", "polling"], // ✅ important
+    allowEIO3: true                       // ✅ important
   });
 
-  // ✅ ✅ Socket auth middleware
+  // ✅ Auth middleware
   io.use((socket, next) => {
     const token =
       socket.handshake.auth?.token ||
@@ -57,42 +50,29 @@ connectDB().then(async () => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       socket.userId = decoded.id;
       next();
-    } catch (err) {
+    } catch {
       next(new Error("Invalid token"));
     }
   });
 
-  // ✅ ✅ Socket connection
+  // ✅ Connection
   io.on("connection", (socket) => {
     const userId = socket.userId;
 
     socket.join(`user_${userId}`);
-    console.log(`[Socket.IO] User ${userId} connected (${socket.id})`);
+    console.log(`[Socket.IO] Connected: ${userId}`);
 
     socket.on("disconnect", () => {
-      console.log(`[Socket.IO] User ${userId} disconnected`);
+      console.log(`[Socket.IO] Disconnected: ${userId}`);
     });
   });
 
-  // ✅ Make io globally available
   setIO(io);
 
-  // ✅ Start background jobs
   startDeletionCleanupJob();
   startBookingReminderJobs();
 
-  // ✅ Start server
   server.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Zutsav server running on port ${PORT}`);
-  });
-
-  // ✅ Error handling
-  server.on("error", (err) => {
-    if (err.code === "EADDRINUSE") {
-      console.error(`❌ Port ${PORT} already in use`);
-    } else {
-      console.error("❌ Server error:", err.message);
-    }
-    process.exit(1);
+    console.log(`🚀 Server running on port ${PORT}`);
   });
 });
