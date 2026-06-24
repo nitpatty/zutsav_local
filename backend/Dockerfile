@@ -5,7 +5,8 @@ WORKDIR /app
 COPY backend/package*.json ./
 RUN npm install
 
-COPY backend/ .
+# force fresh copy (important)
+COPY backend/ ./
 
 EXPOSE 3000
 
