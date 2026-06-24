@@ -53,7 +53,7 @@ connectDB().then(async () => {
   startDeletionCleanupJob();
   startBookingReminderJobs();
 
-  server.listen(PORT, () => {
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Zutsav server running on http://localhost:${PORT}`);
   });
 
