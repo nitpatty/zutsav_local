@@ -7,11 +7,21 @@ const rateLimit = require('express-rate-limit');
 
 const app = express();
 
+// ✅ ROOT ROUTE (VERY IMPORTANT for CapRover)
+app.get('/', (req, res) => {
+  res.send('Zutsav backend is running ✅');
+});
+
+// ✅ Health endpoint (already good)
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date() });
+});
+
 // Security
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000', credentials: true }));
 
-// Auth routes get a tighter limit to prevent brute-force
+// Auth routes limiter
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
@@ -20,7 +30,7 @@ const authLimiter = rateLimit({
   message: { success: false, message: 'Too many attempts. Please try again after 15 minutes.' },
 });
 
-// General API limit — 500 requests per 15 minutes per IP
+// General API limiter
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500,
@@ -37,12 +47,12 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan('dev'));
 
-// Request monitoring — logs endpoints that are called more than 20 times/minute
+// Request monitoring
 const _reqCounts = {};
 app.use('/api/', (req, res, next) => {
   const key = `${req.method} ${req.path.replace(/\/[a-f0-9]{24}/gi, '/:id')}`;
   const now = Date.now();
-  if (!_reqCounts[key] || now - _reqCounts[key].since > 60_000) {
+  if (!_reqCounts[key] || now - _reqCounts[key].since > 60000) {
     _reqCounts[key] = { count: 1, since: now };
   } else {
     _reqCounts[key].count++;
@@ -53,7 +63,7 @@ app.use('/api/', (req, res, next) => {
   next();
 });
 
-// Static files for uploads
+// Static files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
@@ -77,10 +87,7 @@ app.use('/api/notifications',    require('./routes/notification.routes'));
 app.use('/api/comm',             require('./routes/comm.routes'));
 app.use('/api/settings',         require('./routes/settings.routes'));
 
-// Health check
-app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
-
-// Global error handler
+// Error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.status || 500).json({
