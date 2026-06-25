@@ -30,6 +30,7 @@ router.delete('/users/:id',                 ctrl.adminDeleteUser);
 
 // Bookings
 router.get('/bookings',                          ctrl.getBookings);
+router.get('/bookings/export',                   ctrl.exportBookings);
 router.patch('/bookings/:id/assign',             ctrl.assignPandit);
 router.patch('/bookings/:id/status',             ctrl.updateBookingStatus);
 router.patch('/bookings/:id/approve-completion', ctrl.approveCompletion);
@@ -40,10 +41,22 @@ router.patch('/bookings/:id/assign-payout',      ctrl.assignPayout);
 router.patch('/bookings/:id/mark-payout-paid',   ctrl.markPayoutPaid);
 
 // Marketplace Orders
-router.get('/orders',                       ctrl.getOrders);
-router.get('/orders/:id',                   ctrl.getOrderById);
-router.patch('/orders/:id/status',          ctrl.updateOrderStatus);
-router.patch('/orders/:id/shipment',        ctrl.updateOrderShipment);
+router.get('/orders',                           ctrl.getOrders);
+router.get('/orders/:id',                       ctrl.getOrderById);
+router.get('/orders/:id/invoice',               ctrl.getAdminOrderInvoice);
+router.patch('/orders/:id/status',              ctrl.updateOrderStatus);
+router.patch('/orders/:id/shipment',            ctrl.updateOrderShipment);           // legacy
+// Shipment Management
+router.get('/shipping-config',                  ctrl.getShippingConfig);
+router.get('/orders/:id/shipment',              ctrl.getOrderShipment);
+router.post('/orders/:id/shipment/tekipost',    ctrl.createTekipostOrderShipment);
+router.post('/orders/:id/shipment/manual',      ctrl.createManualOrderShipment);
+router.patch('/orders/:id/shipment/status',     ctrl.updateOrderShipmentStatus);
+router.post('/orders/:id/shipment/sync',        ctrl.syncTekipostOrderStatus);
+// Delivery OTP
+router.post('/orders/:id/delivery-otp/generate', ctrl.generateDeliveryOTP);
+router.post('/orders/:id/delivery-otp/resend',   ctrl.resendDeliveryOTP);
+router.post('/orders/:id/delivery-otp/verify',   ctrl.verifyDeliveryOTP);
 
 // Education Masters
 router.get('/education-masters',            ctrl.getEducationMasters);

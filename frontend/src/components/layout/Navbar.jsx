@@ -9,6 +9,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { useCart } from '../../context/CartContext';
+import { useSettings } from '../../context/SettingsContext';
 import ThemeToggle from '../ui/ThemeSwitcher';
 
 const PUBLIC_NAV = [
@@ -58,6 +59,7 @@ export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const { unreadCount } = useNotifications();
   const { cartCount } = useCart();
+  const { logoUrl, platformName } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -114,8 +116,8 @@ export default function Navbar() {
             {/* ── Logo ─────────────────────────────────────────── */}
             <Link to="/" className="flex items-center shrink-0 group">
               <img
-                src="https://zutsav.com/storage/settings/admin_logo_1778665731.png"
-                alt="Zutsav"
+                src={logoUrl || 'https://zutsav.com/storage/settings/admin_logo_1778665731.png'}
+                alt={platformName || 'Zutsav'}
                 className="h-9 w-auto object-contain group-hover:opacity-90 transition-opacity duration-200"
               />
             </Link>

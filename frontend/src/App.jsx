@@ -31,12 +31,14 @@ import MyBookings       from './pages/MyBookings';
 import TempleDirectory  from './pages/TempleDirectory';
 import LivestreamsPage  from './pages/LivestreamsPage';
 import AIAssistant      from './pages/AIAssistant';
+import ZutsavAIWidget   from './components/ai/ZutsavAIWidget';
 import PanchangPage     from './pages/PanchangPage';
 import PaymentCallback  from './pages/PaymentCallback';
 import Notifications    from './pages/Notifications';
 import UserDashboard    from './pages/UserDashboard';
 import MyOrders         from './pages/MyOrders';
 import CartPage         from './pages/CartPage';
+import InvoicePage      from './pages/InvoicePage';
 
 /* ── Auth guard ─────────────────────────────────────── */
 const ProtectedRoute = ({ children, roles }) => {
@@ -52,6 +54,7 @@ const PublicLayout = ({ children }) => (
     <Navbar />
     <main className="flex-1">{children}</main>
     <Footer />
+    <ZutsavAIWidget />
   </div>
 );
 
@@ -105,6 +108,9 @@ const AppRoutes = () => {
           } />
           <Route path="/payment-callback/:merchantTransactionId" element={
             <ProtectedRoute><PaymentCallback /></ProtectedRoute>
+          } />
+          <Route path="/invoice/:bookingId" element={
+            <ProtectedRoute><InvoicePage /></ProtectedRoute>
           } />
 
           {/* Cart */}
@@ -191,6 +197,7 @@ const AppRoutes = () => {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+
       </NotificationProvider>
     </ThemeProvider>
   );

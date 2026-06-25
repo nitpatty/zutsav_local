@@ -32,8 +32,16 @@ const systemSettingsSchema = new mongoose.Schema({
   emailSenderName:   { type: String, default: 'Zutsav' },
 
   // Platform Commission & Tax
+  platformCommissionType:    { type: String, enum: ['percent', 'fixed'], default: 'percent' },
   platformCommissionPercent: { type: Number, default: 0, min: 0, max: 100 },
+  platformCommissionFixed:   { type: Number, default: 0, min: 0 },
   platformGstPercent:        { type: Number, default: 0, min: 0, max: 100 },
+
+  // Partial Payment Rules
+  partialPaymentEnabled:   { type: Boolean, default: false },
+  partialPaymentMinAmount: { type: Number,  default: 500, min: 0 },
+  partialPaymentMode:      { type: String,  enum: ['percentage', 'fixed'], default: 'fixed' },
+  partialPaymentOptions:   { type: [Number], default: [500, 1000, 1500] },
 
   // Delivery Provider
   defaultDeliveryProvider: { type: String, enum: ['manual', 'tekipost'], default: 'manual' },

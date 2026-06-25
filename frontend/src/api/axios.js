@@ -6,21 +6,26 @@ const API = axios.create({
   withCredentials: true,
 });
 
-// Attach JWT token
+// Attach JWT token to every request
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem('zutsav_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// Handle 401 and 429 globally
+// Global response handler
 API.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
+      // Clear stale credentials from storage
       localStorage.removeItem('zutsav_token');
       localStorage.removeItem('zutsav_user');
-      window.location.href = '/login';
+      // Dispatch event so AuthContext handles logout through React state.
+      // NEVER use window.location.href here — it causes a hard reload,
+      // bypasses React Router, and makes any 401 (including from the AI
+      // endpoint) look like the user was "logged out unexpectedly".
+      window.dispatchEvent(new CustomEvent('zutsav:unauthorized'));
     }
     if (err.response?.status === 429) {
       toast.error('Server is busy. Please wait a moment and try again.', {
