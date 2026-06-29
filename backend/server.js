@@ -12,7 +12,8 @@ const {
   startBookingReminderJobs
 } = require('./src/utils/cleanupJobs');
 
-const PORT = 3000;
+// ✅ Use environment variable or default 5000
+const PORT = process.env.PORT || 5000;
 
 // ✅ Allowed frontend origins
 const allowedOrigins = [
@@ -27,18 +28,16 @@ connectDB().then(async () => {
 
   const server = http.createServer(app);
 
-  // ✅ ✅ Fixed Socket.IO config
   const io = new Server(server, {
     cors: {
       origin: allowedOrigins,
       credentials: true,
       methods: ["GET", "POST", "PATCH"]
     },
-    transports: ["websocket", "polling"], // ✅ important
-    allowEIO3: true                       // ✅ important
+    transports: ["websocket", "polling"],
+    allowEIO3: true
   });
 
-  // ✅ Auth middleware
   io.use((socket, next) => {
     const token =
       socket.handshake.auth?.token ||
@@ -55,10 +54,8 @@ connectDB().then(async () => {
     }
   });
 
-  // ✅ Connection
   io.on("connection", (socket) => {
     const userId = socket.userId;
-
     socket.join(`user_${userId}`);
     console.log(`[Socket.IO] Connected: ${userId}`);
 
@@ -72,7 +69,7 @@ connectDB().then(async () => {
   startDeletionCleanupJob();
   startBookingReminderJobs();
 
-  server.listen(process.env.PORT || 5000, () => {
-    console.log(`🚀 Server running on port ${process.env.PORT || 5000}`);
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
   });
 });
